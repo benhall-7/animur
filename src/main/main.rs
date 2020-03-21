@@ -4,24 +4,8 @@ use animur::murmur32_2;
 use args::{Args, Command};
 use structopt::StructOpt;
 
-use std::fmt::Display;
-
-struct LogVec<A: Display>(Vec<A>);
-
-impl<A: Display> LogVec<A> {
-    fn new() -> Self {
-        LogVec(Vec::<A>::new())
-    }
-
-    fn push(&mut self, result: A) {
-        println!("{}", result);
-        self.0.push(result);
-    }
-
-    fn len(&self) -> usize {
-        self.0.len()
-    }
-}
+use std::collections::HashSet;
+use std::iter::FromIterator;
 
 fn main() {
     match Args::from_args().cmd {
@@ -31,13 +15,14 @@ fn main() {
         Command::Reverse(rev) => {
             let mut mutator = Vec::<u8>::with_capacity(rev.max_length as usize);
             let mut length = 1;
-            let mut results = LogVec::<String>::new();
+            let mut results = Vec::<String>::new();
+            let targets = HashSet::from_iter(rev.hex_values);
 
             while length <= rev.max_length {
                 if rev.capitalize {
                     iter_hash_capitalized(
                         &mut mutator,
-                        rev.hex_value,
+                        &targets,
                         &|data: &[u8]| murmur32_2(data, 0),
                         length,
                         &rev.alphabet,
@@ -46,7 +31,7 @@ fn main() {
                 } else {
                     iter_hash(
                         &mut mutator,
-                        rev.hex_value,
+                        &targets,
                         &|data: &[u8]| murmur32_2(data, 0),
                         length,
                         &rev.alphabet,
@@ -57,7 +42,7 @@ fn main() {
                 length += 1;
             }
 
-            if results.len() == 0 {
+            if results.is_empty() {
                 println!("No results");
             }
         }
@@ -66,11 +51,11 @@ fn main() {
 
 fn iter_hash<Hasher>(
     current: &mut Vec<u8>,
-    target: u32,
+    targets: &HashSet<u32>,
     hasher: &Hasher,
     max_len: usize,
     alphabet: &str,
-    results: &mut LogVec<String>,
+    results: &mut Vec<String>,
 ) where
     Hasher: Fn(&[u8]) -> u32,
 {
@@ -78,21 +63,22 @@ fn iter_hash<Hasher>(
     if current.len() < max_len {
         for &c in alphabet.as_bytes().iter() {
             current.push(c);
-            iter_hash(current, target, hasher, max_len, alphabet, results);
+            iter_hash(current, targets, hasher, max_len, alphabet, results);
             current.pop();
         }
-    } else if current_hash == target {
+    } else if targets.contains(&current_hash) {
+        println!("0x{:08x}: {}", current_hash, String::from_utf8_lossy(current));
         results.push(String::from_utf8(current.clone()).unwrap());
     }
 }
 
 fn iter_hash_capitalized<Hasher>(
     current: &mut Vec<u8>,
-    target: u32,
+    targets: &HashSet<u32>,
     hasher: &Hasher,
     max_len: usize,
     alphabet: &str,
-    results: &mut LogVec<String>,
+    results: &mut Vec<String>,
 ) where
     Hasher: Fn(&[u8]) -> u32,
 {
@@ -100,10 +86,11 @@ fn iter_hash_capitalized<Hasher>(
     if current.len() < max_len {
         for &c in alphabet.to_uppercase().as_bytes().iter() {
             current.push(c);
-            iter_hash(current, target, hasher, max_len, alphabet, results);
+            iter_hash(current, targets, hasher, max_len, alphabet, results);
             current.pop();
         }
-    } else if current_hash == target {
+    } else if targets.contains(&current_hash) {
+        println!("0x{:08x}: {}", current_hash, String::from_utf8_lossy(current));
         results.push(String::from_utf8(current.clone()).unwrap());
     }
 }

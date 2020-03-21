@@ -49,8 +49,8 @@ pub fn murmur32_2(data: &[u8], seed: u32) -> u32 {
     while position as isize <= len as isize - 4 {
         let val = LittleEndian::read_u32(&data[position..]);
         hash = murmur32_scramble(Wrapping(val)) ^ hash;
-        // In the source assembler function, this instruction exists.
-        // However, it seems that when run, it has no effect
+        // In the source assembler function, this instruction exists
+        // However, when run in an emulation, it seems to have no effect
         // hash = (hash >> 19) | (hash << 13);
         hash += (hash << 2) + Wrapping(0xE654_6B64_u32);
 

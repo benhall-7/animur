@@ -29,7 +29,7 @@ pub(crate) struct Calc {
 #[derive(Debug, StructOpt)]
 pub(crate) struct Reverse {
     #[structopt(parse(try_from_str = parse_hash))]
-    pub hex_value: u32,
+    pub hex_values: Vec<u32>,
 
     #[structopt(default_value = "6")]
     #[structopt(short = "m")]
