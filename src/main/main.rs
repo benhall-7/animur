@@ -1,6 +1,6 @@
 mod args;
 
-use animur::murmur32;
+use animur::murmur32_2;
 use args::{Args, Command};
 use structopt::StructOpt;
 
@@ -26,7 +26,7 @@ impl<A: Display> LogVec<A> {
 fn main() {
     match Args::from_args().cmd {
         Command::Calc(calc) => {
-            println!("0x{:08x}", murmur32(calc.word.as_bytes()));
+            println!("0x{:08x}", murmur32_2(calc.word.as_bytes(), 0));
         }
         Command::Reverse(rev) => {
             let mut mutator = Vec::<u8>::with_capacity(rev.max_length as usize);
@@ -38,7 +38,7 @@ fn main() {
                     iter_hash_capitalized(
                         &mut mutator,
                         rev.hex_value,
-                        &murmur32,
+                        &|data: &[u8]| murmur32_2(data, 0),
                         length,
                         &rev.alphabet,
                         &mut results,
@@ -47,7 +47,7 @@ fn main() {
                     iter_hash(
                         &mut mutator,
                         rev.hex_value,
-                        &murmur32,
+                        &|data: &[u8]| murmur32_2(data, 0),
                         length,
                         &rev.alphabet,
                         &mut results,
